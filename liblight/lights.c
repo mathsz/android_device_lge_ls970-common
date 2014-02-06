@@ -44,7 +44,7 @@ char const*const RED_LED_FILE
 
 char const*const GREEN_LED_FILE
         = "/sys/class/leds/green/brightness";
-        
+
 char const*const LCD_FILE
         = "/sys/class/leds/lcd-backlight/brightness";
 
@@ -69,7 +69,7 @@ char const*const BUTTON_FILE
 
 void init_globals(void)
 {
-    // init the mutex
+        // init the mutex
     pthread_mutex_init(&g_lock, NULL);
 }
 
@@ -113,7 +113,7 @@ static int
 set_light_buttons(struct light_device_t* dev,
         struct light_state_t const* state)
 {
-        int err = 0;
+    int err = 0;
     int on = is_lit(state);
     pthread_mutex_lock(&g_lock);
     err = write_int(BUTTON_FILE, on?1:0);
@@ -136,7 +136,7 @@ set_light_backlight(struct light_device_t* dev,
 static int
 set_speaker_light_locked(struct light_device_t* dev,
         struct light_state_t const* state)
-        {
+{
 
     int len;
     int alpha, red, green;
@@ -198,7 +198,14 @@ set_speaker_light_locked(struct light_device_t* dev,
         }
     }
 
-    write_int(LEDwrite_int(RED_BLINK_FILE, blink);
+    write_int(LED_LOCK_UPDATE_FILE, 1); // for LED On/Off synchronization
+
+    if (blink) {
+        write_int(RED_FREQ_FILE, freq);
+        write_int(RED_PWM_FILE, pwm);
+    }
+
+    write_int(RED_BLINK_FILE, blink);
 
     write_int(RED_LED_FILE, red);
     write_int(GREEN_LED_FILE, green);
@@ -213,14 +220,14 @@ handle_speaker_battery_locked(struct light_device_t* dev,
     struct light_state_t const* state, int state_type)
 {
     if(is_lit(&g_attention)) {
-        set_speaker_light_locked(dev, NULL);
+            set_speaker_light_locked(dev, NULL);
         set_speaker_light_locked(dev, &g_attention);
     } else {
         if(is_lit(&g_battery) && is_lit(&g_notification)) {
             set_speaker_light_locked(dev, NULL);
             set_speaker_light_locked(dev, &g_notification);
         } else if(is_lit(&g_battery)) {
-            set_speaker_light_locked(dev, NULL);_LOCK_UPDATE_FILE, 1); // for LED On/Off synchronization
+            set_speaker_light_locked(dev, NULL);
             set_speaker_light_locked(dev, &g_battery);
         } else {
             set_speaker_light_locked(dev, &g_notification);
@@ -262,12 +269,11 @@ set_light_attention(struct light_device_t* dev,
     g_attention = *state;
     /*
      * attention logic tweaks from:
-     * https://github.com/CyanogenMod/android_device_samsung_d2-common/commit/6886bdbbc2417dd605f9818af2537c7b58
-491150
-    */
+     * https://github.com/CyanogenMod/android_device_samsung_d2-common/commit/6886bdbbc2417dd605f9818af2537c7b58491150
+     */
     if (state->flashMode == LIGHT_FLASH_HARDWARE) {
         if (g_attention.flashOnMS > 0 && g_attention.flashOffMS == 0) {
-                g_attention.flashMode = LIGHT_FLASH_NONE;
+            g_attention.flashMode = LIGHT_FLASH_NONE;
         }
     } else if (state->flashMode == LIGHT_FLASH_NONE) {
         g_attention.color = 0;
@@ -313,7 +319,7 @@ static int open_lights(const struct hw_module_t* module, char const* name,
     else if (0 == strcmp(LIGHT_ID_ATTENTION, name))
         set_light = set_light_attention;
     else
-    return -EINVAL;
+        return -EINVAL;
     pthread_once(&g_init, init_globals);
 
     struct light_device_t *dev = malloc(sizeof(struct light_device_t));
@@ -345,32 +351,3 @@ struct hw_module_t HAL_MODULE_INFO_SYM = {
     .author = "Google, Inc., AOKP",
     .methods = &lights_module_methods,
 };
-
-    if (blink) {
-        write_int(RED_FREQ_FILE, freq);
-        write_int(RED_PWM_FILE, pwm);
-    }
-
-write_int(RED_BLINK_FILE, blink);
-
-    write_int(RED_LED_FILE, red);
-    write_int(GREEN_LED_FILE, green);
-
-    write_int(LED_LOCK_UPDATE_FILE, 0);
-
-    return 0;
-}
-
-static void
-handle_speaker_battery_locked(struct light_device_t* dev,
-    struct light_state_t const* state, int state_type)
-{
-    if(is_lit(&g_attention)) {
-        set_speaker_light_locked(dev, NULL);
-        set_speaker_light_locked(dev, &g_attention);
-    } else {
-        if(is_lit(&g_battery) && is_lit(&g_notification)) {
-            set_speaker_light_locked(dev, NULL);
-            set_speaker_light_locked(dev, &g_notification);
-        } else if(is_lit(&g_battery)) {
-            set_speaker_light_locked(dev, NULL);
